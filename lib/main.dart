@@ -23,15 +23,14 @@ class MeuApp extends StatelessWidget {
   }
 }
 
-
 class AgendamentoEventoTela extends StatefulWidget{
   const AgendamentoEventoTela({super.key});
-
 
   @override
     State<AgendamentoEventoTela> createState() => _AgedamentoEventoTelaState(); 
   }
 
+enum Visibilidade{public, private, vip}
 
   class _AgedamentoEventoTelaState extends State<AgendamentoEventoTela> {
     // 1. Valores Padrão (para reset)
@@ -39,12 +38,34 @@ class AgendamentoEventoTela extends StatefulWidget{
     static const TimeOfDay _horarioPadrao = TimeOfDay(hour: 19, minute: 0);
     static const String _tipoPadrao = 'Aniversário';
     static const double _convidadosPadrao = 50.0;
+    static const Visibilidade _visibilidadePadrao = .private;
+
+    static const Map<String, bool> _servicosPadrao = {
+      'Buffet': false,
+      'Fotógrafo': false,
+      'Decoração': false,
+      'Dj': false,
+    };
+
+    static const List<String> _tagsDisponiveis = [
+      'Vegetariano',
+      'Sem Glútem',
+      'Sem Lactose',
+      'Vegano',
+      'Sem Açulcar'
+    ];
+
+    static const List<String> _tagsPadrao = [];
+
 
     // 2. Variáveis de Estado
     late DateTime _dataSelecionada;
     late TimeOfDay _horarioSelecionado;
     late String _tipoEventoSelecionado;
     late double _quantidadeConvidados;
+    late Visibilidade _visibilidadeSelecionada;
+    late Map<String,bool> _servicosSelecionados;
+    late List<String> _tagsSelecionadas;
 
     @override
     void initState() {
@@ -59,7 +80,9 @@ class AgendamentoEventoTela extends StatefulWidget{
         _horarioSelecionado = _horarioPadrao;
         _tipoEventoSelecionado = _tipoPadrao;
         _quantidadeConvidados = _convidadosPadrao;
-
+        _visibilidadeSelecionada = _visibilidadePadrao;
+        _servicosSelecionados = Map<String, bool>.from(_servicosPadrao);
+        _tagsSelecionadas = List<String>.from(_tagsPadrao);
       });
       print('[DEBUG] Formulario resetado para os valores padrao.');
     }
@@ -74,10 +97,14 @@ class AgendamentoEventoTela extends StatefulWidget{
       print('Horário: ${_horarioSelecionado.format(context)}');
       print('Tipo de Evento: $_tipoEventoSelecionado');
       print('Estimativa de Convidados: ${_quantidadeConvidados.round()}');
+      print('Visibilidade:$_visibilidadeSelecionada');
+      print('Serviços Adicionais:$_servicosSelecionados');
+      print('Restriões alimentares(Tags): $_tagsSelecionadas');
       print("========================================");
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content:Text('Evento Salvo com sucesso! Veja os logs no console.'),
+        const SnackBar(
+          content:Text('Evento Salvo com sucesso! Veja os logs no console.'),
         ),
       );
     }
@@ -213,6 +240,99 @@ class AgendamentoEventoTela extends StatefulWidget{
                   },
                 ),
                 const Divider(height: 32),
+
+                //---5. Radio ---
+                Text(
+                  'Visibilidade do evento',
+                  style:Theme.of(context).textTheme.titleMedium,
+                ),
+
+                RadioGroup<Visibilidade>(
+                  groupValue: _visibilidadeSelecionada,
+                  onChanged: (Visibilidade? visibilidade) {
+                    setState(() {
+                      _visibilidadeSelecionada = visibilidade!;
+                      print('[DEBUG - Radio]Visibilidade: $visibilidade');
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Text('Público'),
+                        leading: Radio<Visibilidade>(value: Visibilidade.public),
+
+                      ),
+
+                      ListTile(
+                        title: Text('Privado'),
+                        leading: Radio<Visibilidade>(value: Visibilidade.private),
+
+                      ),
+
+                      ListTile(
+                        title: Text('Apenas Convidados'),
+                        leading: Radio<Visibilidade>(value: Visibilidade.vip),
+
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 32),
+
+                // ---6.checkbox---
+                Text(
+                  'Serviços Adicionais',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Column(
+                    children: _servicosSelecionados.keys.map((servico) {
+                      return CheckboxListTile(
+                        dense: true,
+                        title: Text(servico),
+                        value: _servicosSelecionados[servico], 
+                        onChanged:(bool? marcado){
+                          setState(() {
+                            _servicosSelecionados[servico] = marcado ?? false;
+                          });
+                          print(
+                            '[DEBUG - Checkbox] Servico "$servico" alterado para:$marcado',
+                          );
+                        } ,
+                      );
+                    }).toList(),
+                  ),
+                  const Divider(height: 32),
+
+                  // ---7. chip ---
+
+                  Text(
+                    'Restrições alimentares (Tags)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8.0,
+                    children: _tagsDisponiveis.map((tag){
+                      final estaSelecionado = _tagsSelecionadas.contains(tag);
+                      return FilterChip(
+                        label: Text(tag),
+                        selected: estaSelecionado, 
+                        onSelected: (bool selecionado){
+                          setState(() {
+                            if(selecionado){
+                              _tagsSelecionadas.add(tag);
+                            }else{
+                              _tagsSelecionadas.remove(tag);
+                            }
+                          });
+                          print(
+                            '[DEBUG - Chip] Tag "$tag" ${selecionado ? "adicionada" :  "removida"}. Lista atual: $_tagsSelecionadas',
+
+                          );
+                        },
+                        );
+                    }).toList(),
+                  )
             ],
           ),
         ),
